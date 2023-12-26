@@ -8,8 +8,8 @@ sealed class InfiniteListState<T, O> {
   const InfiniteListState({required this.result});
 }
 
-class InfiniteLoaderInitial<T, O> extends InfiniteListState<T, O> {
-  InfiniteLoaderInitial(O initialOptions)
+class InfiniteListInitial<T, O> extends InfiniteListState<T, O> {
+  InfiniteListInitial(O initialOptions)
       : super(
           result: PageResult<T, O>(
             data: [],
@@ -21,12 +21,16 @@ class InfiniteLoaderInitial<T, O> extends InfiniteListState<T, O> {
         );
 }
 
-class InfiniteLoaderLoading<T, O> extends InfiniteListState<T, O> {
-  const InfiniteLoaderLoading({required this.itemCount, required super.result});
+class InfiniteListLoading<T, O> extends InfiniteListState<T, O> {
+  const InfiniteListLoading({required this.itemCount, required super.result});
 
   final int itemCount;
 }
 
-class InfiniteLoaderUpdated<T, O> extends InfiniteListState<T, O> {
-  const InfiniteLoaderUpdated({required super.result});
+class InfiniteListUpdated<T, O> extends InfiniteListState<T, O> {
+  const InfiniteListUpdated({required super.result});
+}
+
+class InfiniteListError<T, O> extends InfiniteListState<T, O> {
+  const InfiniteListError({required super.result});
 }

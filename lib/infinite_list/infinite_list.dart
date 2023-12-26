@@ -6,6 +6,7 @@ import 'package:inifinite_loading/infinite_list/view_models/page_result.dart';
 
 typedef InfiniteListBuilder<T, O> = Widget Function(BuildContext context, T item);
 typedef InfiniteListLoadingBuilder = Widget Function(BuildContext context);
+typedef InfiniteErrorBuilder = Widget Function(BuildContext context);
 typedef HeaderBuilder = Widget Function(BuildContext context);
 
 class InfiniteList<T, O> extends StatefulWidget {
@@ -13,6 +14,7 @@ class InfiniteList<T, O> extends StatefulWidget {
     required this.fetcher,
     required this.loadingBuilder,
     required this.itemBuilder,
+    required this.errorBuilder,
     this.headerBuilder,
     required this.initialOptions,
     super.key,
@@ -23,6 +25,7 @@ class InfiniteList<T, O> extends StatefulWidget {
   final HeaderBuilder? headerBuilder;
   final InfiniteListBuilder<T, O> itemBuilder;
   final InfiniteListLoadingBuilder loadingBuilder;
+  final InfiniteErrorBuilder errorBuilder;
 
   @override
   State<InfiniteList<T, O>> createState() => _InfiniteListState<T, O>();
@@ -41,7 +44,9 @@ class _InfiniteListState<T, O> extends State<InfiniteList<T, O>> {
     _scrollController.addListener(
       () {
         if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-          _infiniteListCubit.next();
+          if (_infiniteListCubit.state is! InfiniteListError<T, O>) {
+            _infiniteListCubit.next();
+          }
         }
       },
     );
@@ -61,7 +66,7 @@ class _InfiniteListState<T, O> extends State<InfiniteList<T, O>> {
       child: BlocConsumer<InfiniteListCubit<T, O>, InfiniteListState<T, O>>(
         bloc: _infiniteListCubit,
         listener: (BuildContext context, InfiniteListState<T, O> state) {
-          if (state is InfiniteLoaderInitial) {
+          if (state is InfiniteListInitial) {
             _scrollController.jumpTo(0);
           }
         },
@@ -74,11 +79,12 @@ class _InfiniteListState<T, O> extends State<InfiniteList<T, O>> {
                   controller: _scrollController,
                   itemBuilder: (BuildContext context, int index) => index < state.result.data.length
                       ? widget.itemBuilder(context, state.result.data[index])
-                      : widget.loadingBuilder(context),
+                      : (state is InfiniteListLoading ? widget.loadingBuilder(context) : widget.errorBuilder(context)),
                   itemCount: switch (state) {
-                    InfiniteLoaderInitial<T, O>() => 0,
-                    InfiniteLoaderLoading<T, O>(:final int itemCount) => itemCount,
-                    InfiniteLoaderUpdated<T, O>(:final PageResult<T, O> result) => result.data.length,
+                    InfiniteListInitial<T, O>() => 0,
+                    InfiniteListLoading<T, O>(:final int itemCount) => itemCount,
+                    InfiniteListUpdated<T, O>(:final PageResult<T, O> result) => result.data.length,
+                    InfiniteListError<T, O>(:final PageResult<T, O> result) => result.data.length + 1,
                   },
                 ),
               ),

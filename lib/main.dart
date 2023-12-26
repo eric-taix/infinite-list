@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inifinite_loading/infinite_list/bloc/infinite_list_cubit.dart';
 import 'package:inifinite_loading/infinite_list/infinite_list.dart';
 import 'package:inifinite_loading/load_lorem_use_case.dart';
 import 'package:inifinite_loading/loading_lorem_card.dart';
@@ -69,6 +71,17 @@ class MyHomePage extends StatelessWidget {
         headerBuilder: (BuildContext context) => const LoremHeader(),
         itemBuilder: (BuildContext context, Lorem item) => LoremCard(key: ValueKey(item.id), lorem: item),
         loadingBuilder: (BuildContext context) => const LoadingLoremCard(),
+        errorBuilder: (BuildContext context) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 100.0),
+          child: Center(
+            child: ElevatedButton(
+              onPressed: () {
+                context.read<InfiniteListCubit<Lorem, LoremOptions>>().load();
+              },
+              child: const Text('An error occurred. Tap to retry.'),
+            ),
+          ),
+        ),
       ),
     );
   }

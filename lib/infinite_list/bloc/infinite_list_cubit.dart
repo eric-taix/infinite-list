@@ -6,17 +6,18 @@ import 'package:inifinite_loading/infinite_list/view_models/page_result.dart';
 typedef InfiniteListFetcher<T, O> = Future<PageResult<T, O>> Function(PageRequest<T, O> pagerRequest);
 
 class InfiniteListCubit<T, O> extends Cubit<InfiniteListState<T, O>> {
-  InfiniteListCubit({required this.fetcher, required O initialOptions}) : super(InfiniteLoaderInitial(initialOptions));
+  InfiniteListCubit({required this.fetcher, required O initialOptions}) : super(InfiniteListInitial(initialOptions));
 
   final InfiniteListFetcher<T, O> fetcher;
 
-  void load({O? options, int pageSize = 10}) async {
-    emit(InfiniteLoaderInitial(state.result.options));
+  void load({O? options, int? pageSize = 10}) async {
+    emit(InfiniteListInitial(state.result.options));
+    final int pSize = pageSize ?? state.result.size;
     _loadPage(
-      itemCount: pageSize,
+      itemCount: state.result.data.length + pSize,
       request: PageRequest(
-        page: 0,
-        size: pageSize,
+        page: state.result.page,
+        size: pSize,
         options: options ?? state.result.options,
       ),
     );
@@ -24,7 +25,7 @@ class InfiniteListCubit<T, O> extends Cubit<InfiniteListState<T, O>> {
 
   _loadPage({required int itemCount, required PageRequest<T, O> request}) async {
     emit(
-      InfiniteLoaderLoading(
+      InfiniteListLoading(
         itemCount: itemCount,
         result: PageResult<T, O>(
           data: state.result.data,
@@ -35,18 +36,32 @@ class InfiniteListCubit<T, O> extends Cubit<InfiniteListState<T, O>> {
         ),
       ),
     );
-    final pageResult = await fetcher.call(request);
-    emit(
-      InfiniteLoaderUpdated(
-        result: PageResult<T, O>(
-          data: [...state.result.data, ...pageResult.data],
-          total: pageResult.total,
-          page: pageResult.page,
-          size: pageResult.size,
-          options: state.result.options,
+    try {
+      final pageResult = await fetcher.call(request);
+      emit(
+        InfiniteListUpdated(
+          result: PageResult<T, O>(
+            data: [...state.result.data, ...pageResult.data],
+            total: pageResult.total,
+            page: pageResult.page,
+            size: pageResult.size,
+            options: state.result.options,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      emit(
+        InfiniteListError(
+          result: PageResult<T, O>(
+            data: state.result.data,
+            total: state.result.total,
+            page: state.result.page,
+            size: state.result.size,
+            options: state.result.options,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> next() async {

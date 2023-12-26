@@ -32,6 +32,10 @@ class LoadLoremUseCase {
 
     final int start = request.page * request.size;
     final int end = ((request.page + 1) * request.size).clamp(0, sortedLorem.length);
+    if (start > 10 && request.options.filter == '7') {
+      print('Exception thrown');
+      throw Exception('Error loading data');
+    }
     return start < sortedLorem.length
         ? PageResult<Lorem, LoremOptions>(
             data: sortedLorem.sublist(start, end),
